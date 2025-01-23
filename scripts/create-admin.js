@@ -1,34 +1,42 @@
-const { PrismaClient } = require("@prisma/client");
-const bcrypt = require("bcryptjs");
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
 async function main() {
+  const email = "admin@example.com";
+  const password = "adminpassword";
+
+  // パスワードをハッシュ化
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   try {
-    // 既存のユーザーを削除
-    await prisma.user.deleteMany({
-      where: {
-        email: "admin@example.com"
-      }
-    });
-
-    // 新しい管理者ユーザーを作成
-    const hashedPassword = await bcrypt.hash("adminpassword", 10);
-    const admin = await prisma.user.create({
-      data: {
-        email: "admin@example.com",
-        password: hashedPassword,
+    // 管理者ユーザーを作成または更新
+    const admin = await prisma.user.upsert({
+      where: { email },
+      update: {
+        hashedPassword,
         role: "admin",
-        name: "Admin User"
-      }
+      },
+      create: {
+        email,
+        hashedPassword,
+        role: "admin",
+        name: "Administrator",
+      },
     });
 
-    console.log("Admin user created successfully:", admin.email);
+    console.log('Admin user created/updated:', admin.email);
   } catch (error) {
-    console.error("Error creating admin user:", error);
-  } finally {
-    await prisma.$disconnect();
+    console.error('Error creating admin user:', error);
   }
 }
 
-main();
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
