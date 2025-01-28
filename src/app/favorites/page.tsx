@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Heart } from 'lucide-react';
 import Image from 'next/image';
+import { useFavorites } from '@/context/FavoritesContext';
 
 interface Product {
   id: number;
@@ -21,6 +22,7 @@ export default function FavoritesPage() {
   const { status } = useSession();
   const [favorites, setFavorites] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { decrementFavoritesCount } = useFavorites();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -61,6 +63,7 @@ export default function FavoritesPage() {
         setFavorites(prevFavorites => 
           prevFavorites.filter(product => product.id !== productId)
         );
+        decrementFavoritesCount();
       }
     } catch (error) {
       console.error('Error removing favorite:', error);
@@ -93,7 +96,7 @@ export default function FavoritesPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {favorites.map((product) => (
-              <div key={product.id} className="border-2 border-black rounded-xl overflow-hidden">
+              <div key={product.id} className="border-2 border-black rounded-xl overflow-hidden relative">
                 <Link href={`/products/${product.id}`} className="block relative aspect-square">
                   <Image
                     src={product.imageUrl}
@@ -114,28 +117,29 @@ export default function FavoritesPage() {
                       NEW
                     </span>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleRemoveFavorite(product.id);
+                    }}
+                    className="absolute top-4 right-4 p-2 rounded-full bg-black text-white transition-colors hover:bg-gray-900"
+                    aria-label="お気に入りから削除"
+                  >
+                    <Heart className="w-5 h-5" fill="currentColor" />
+                  </button>
                 </Link>
 
                 <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="text-lg font-bold text-black mb-1">
-                        {product.name}
-                      </h3>
-                      <p className="text-xl font-black text-black">
-                        ¥{product.price.toLocaleString()}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveFavorite(product.id)}
-                      className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                      aria-label="お気に入りから削除"
-                    >
-                      <Heart className="w-6 h-6 text-pink-500" fill="currentColor" />
-                    </button>
+                  <div>
+                    <h3 className="text-lg font-bold text-black mb-1">
+                      {product.name}
+                    </h3>
+                    <p className="text-xl font-black text-black">
+                      ¥{product.price.toLocaleString()}
+                    </p>
                   </div>
                   
-                  <p className={`font-medium ${
+                  <p className={`font-medium mt-2 ${
                     product.stock > 0 ? 'text-green-600' : 'text-red-600'
                   }`}>
                     {product.stock > 0 ? '在庫あり' : '在庫なし'}

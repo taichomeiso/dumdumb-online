@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu"
+import { useFavorites } from "@/context/FavoritesContext"
 
 interface HeaderProps {
   cartItemsCount?: number;
@@ -18,6 +19,7 @@ interface HeaderProps {
 
 export function Header({ cartItemsCount = 0 }: HeaderProps) {
   const { data: session } = useSession()
+  const { favoritesCount } = useFavorites()
   const isAdmin = session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL
 
   return (
@@ -55,6 +57,11 @@ export function Header({ cartItemsCount = 0 }: HeaderProps) {
             
             <Link href="/favorites" className="relative hover:-translate-y-0.5 transition-transform">
               <Heart className="w-6 h-6 text-black" />
+              {favoritesCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-black text-white text-xs rounded-full flex items-center justify-center font-bold">
+                  {favoritesCount}
+                </span>
+              )}
             </Link>
             
             <Link href="/cart" className="relative hover:-translate-y-0.5 transition-transform">

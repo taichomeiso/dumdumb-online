@@ -1,19 +1,14 @@
 'use client';
 
 import { SessionProvider } from 'next-auth/react';
-import { LanguageProvider } from '@/contexts/LanguageContext';
-import React, { ReactNode } from 'react';
+import { FavoritesProvider } from '@/context/FavoritesContext';
 
-interface ProvidersProps {
-  children: ReactNode;
-}
-
-export function Providers({ children }: ProvidersProps) {
+export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <LanguageProvider>
+      <FavoritesProvider>
         {children}
-      </LanguageProvider>
+      </FavoritesProvider>
     </SessionProvider>
   );
 }
