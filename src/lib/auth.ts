@@ -15,38 +15,43 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("メールアドレスとパスワードを入力してください");
+          return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email,
-          },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email,
+            },
+          });
 
-        if (!user) {
-          throw new Error("ユーザーが見つかりません");
+          if (!user || !user.hashedPassword) {
+            return null;
+          }
+
+          if (credentials.role === "admin" && user.role !== "admin") {
+            return null;
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.hashedPassword
+          );
+
+          if (!isPasswordValid) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
         }
-
-        if (credentials.role === "admin" && user.role !== "admin") {
-          throw new Error("管理者権限がありません");
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          throw new Error("パスワードが正しくありません");
-        }
-
-        return {
-          id: user.id.toString(),
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        };
       },
     }),
   ],
@@ -54,13 +59,15 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.email = user.email;
         token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
+      if (token && session.user) {
+        session.user.id = token.id;
+        session.user.email = token.email as string;
         session.user.role = token.role as string;
       }
       return session;
@@ -68,10 +75,10 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/admin/login",
-    error: "/admin/login",
   },
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   secret: process.env.NEXTAUTH_SECRET,
-};
+}

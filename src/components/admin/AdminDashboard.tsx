@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Trash2 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import { Header } from '@/components/Header';
 
@@ -27,7 +28,7 @@ interface NewProduct {
   name: string;
   price: string;
   description: string;
-  imageUrl: string;
+  image: string;
   category: string;
   stock: string;
   isNew: boolean;
@@ -43,19 +44,18 @@ const categories: Category[] = [
 ];
 
 export default function AdminDashboard() {
+  const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const router = useRouter();
   
   const [newProduct, setNewProduct] = useState<NewProduct>({
     name: '',
     price: '',
     description: '',
-    imageUrl: '',
+    image: '',
     category: 'tshirt',
     stock: '0',
     isNew: false,
@@ -63,8 +63,12 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    void fetchProducts();
-  }, []);
+    if (status === 'unauthenticated') {
+      router.push('/admin/login');
+    } else {
+      void fetchProducts();
+    }
+  }, [session, status, router]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -111,11 +115,9 @@ export default function AdminDashboard() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
-    setSuccess('');
 
     try {
-      let imageUrl = newProduct.imageUrl;
+      let imageUrl = newProduct.image;
       
       if (selectedFile) {
         imageUrl = await handleUpload();
@@ -125,10 +127,10 @@ export default function AdminDashboard() {
         ...newProduct,
         price: parseInt(newProduct.price),
         stock: parseInt(newProduct.stock),
-        imageUrl: imageUrl,
+        image: imageUrl,
       };
 
-      const response = await fetch('/api/products', {
+      const response = await fetch('/api/admin/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +147,7 @@ export default function AdminDashboard() {
         name: '',
         price: '',
         description: '',
-        imageUrl: '',
+        image: '',
         category: 'tshirt',
         stock: '0',
         isNew: false,
@@ -153,12 +155,12 @@ export default function AdminDashboard() {
       });
       setSelectedFile(null);
       setPreview(null);
-      setSuccess('商品を登録しました');
       
       void fetchProducts();
+      alert('商品を登録しました');
     } catch (error) {
       console.error('Error:', error);
-      setError(error instanceof Error ? error.message : '商品の登録に失敗しました');
+      alert(error instanceof Error ? error.message : '商品の登録に失敗しました');
     } finally {
       setIsLoading(false);
     }
@@ -170,7 +172,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      const response = await fetch(`/api/products/${productId}`, {
+      const response = await fetch(`/api/admin/products/${productId}`, {
         method: 'DELETE',
       });
 
@@ -179,49 +181,42 @@ export default function AdminDashboard() {
         throw new Error(data.error || '商品の削除に失敗しました');
       }
 
-      setSuccess('商品を削除しました');
+      alert('商品を削除しました');
       void fetchProducts();
     } catch (error) {
       console.error('Error:', error);
-      setError(error instanceof Error ? error.message : '商品の削除に失敗しました');
+      alert(error instanceof Error ? error.message : '商品の削除に失敗しました');
     }
   };
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/products');
+      const response = await fetch('/api/admin/products');
       if (!response.ok) {
-        if (response.status === 404) {
-          setProducts([]);
-          return;
-        }
-        throw new Error('商品の取得に失敗しました');
+        const data = await response.json();
+        throw new Error(data.error || '商品の取得に失敗しました');
       }
       const data = await response.json();
       setProducts(data);
     } catch (error) {
       console.error('Error fetching products:', error);
-      setProducts([]);
+      alert(error instanceof Error ? error.message : '商品の取得に失敗しました');
     }
   };
 
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-black border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
-    <>
+    <div>
       <Header />
       <div className="min-h-screen bg-gray-100 py-8">
         <div className="max-w-4xl mx-auto px-4">
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
-          
-          {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-              <span className="block sm:inline">{success}</span>
-            </div>
-          )}
-
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h1 className="text-2xl font-black text-black mb-6">商品登録</h1>
             
@@ -267,6 +262,7 @@ export default function AdminDashboard() {
                   onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                   className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
                   required
+                  min="0"
                 />
               </div>
 
@@ -352,7 +348,6 @@ export default function AdminDashboard() {
             </form>
           </div>
 
-          {/* 商品一覧 */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-black text-black mb-6">登録済み商品</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -390,6 +385,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

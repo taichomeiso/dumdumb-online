@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
@@ -9,11 +9,13 @@ export default function AdminLoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
     try {
       const result = await signIn("credentials", {
@@ -24,35 +26,42 @@ export default function AdminLoginForm() {
         callbackUrl: "/admin"
       });
 
-      if (result?.error) {
-        console.error("Login error:", result.error);
+      console.log("Sign in result:", result);
+
+      if (!result?.ok) {
         setError("ログインに失敗しました。認証情報を確認してください。");
-      } else {
-        router.push("/admin");
+        return;
       }
+
+      // ログイン成功時の処理
+      await router.push("/admin");
+      router.refresh();
+      
     } catch (error) {
       console.error("Login error:", error);
       setError("ログインに失敗しました。もう一度お試しください。");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-gray-100">
       <Header />
-      <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full mx-auto">
-          <div className="bg-white p-8 rounded-lg shadow-md">
-            <h2 className="text-2xl font-black text-black text-center mb-6">
+      <main className="flex items-center justify-center px-4 sm:px-6 lg:px-8 h-[calc(100vh-4rem)]">
+        <div className="w-full max-w-lg">
+          <div className="bg-white shadow-xl rounded-lg p-6 sm:p-8 md:p-10">
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 text-center mb-8">
               管理者ログイン
             </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                   <span className="block sm:inline">{error}</span>
                 </div>
               )}
               <div>
-                <label htmlFor="email" className="block text-base font-bold text-black mb-1">
+                <label htmlFor="email" className="block text-sm sm:text-base font-bold text-gray-900 mb-2">
                   メールアドレス
                 </label>
                 <input
@@ -60,14 +69,15 @@ export default function AdminLoginForm() {
                   name="email"
                   type="email"
                   required
-                  className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-black focus:ring-1 focus:ring-black transition-colors"
                   placeholder="admin@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
               <div>
-                <label htmlFor="password" className="block text-base font-bold text-black mb-1">
+                <label htmlFor="password" className="block text-sm sm:text-base font-bold text-gray-900 mb-2">
                   パスワード
                 </label>
                 <input
@@ -75,23 +85,25 @@ export default function AdminLoginForm() {
                   name="password"
                   type="password"
                   required
-                  className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-black focus:ring-1 focus:ring-black transition-colors"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition-colors font-bold text-lg mt-6"
+                disabled={isLoading}
+                className="w-full bg-black text-white py-4 rounded-lg hover:bg-gray-800 transition-colors font-bold text-lg mt-8 disabled:bg-gray-400"
               >
-                ログイン
+                {isLoading ? "ログイン中..." : "ログイン"}
               </button>
             </form>
           </div>
         </div>
-      </div>
-    </>
+      </main>
+    </div>
   );
 }
