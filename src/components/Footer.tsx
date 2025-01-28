@@ -5,16 +5,12 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <h3 className="text-lg font-semibold mb-4">dumdumb</h3>
-            <p className="text-gray-400">
-              スタイリッシュなショッピング体験をお届けします
-            </p>
+            <p className="text-gray-400">可愛らしい商品をお届けします</p>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-4">お問い合わせ</h3>
             <ul className="space-y-2 text-gray-400">
-              <li>東京都渋谷区</li>
-              <li>contact@example.com</li>
-              <li>03-1234-5678</li>
+              <li>dumdumbonline@gmail.com</li>
             </ul>
           </div>
           <div>
