@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { Heart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useFavorites } from '@/context/FavoritesContext';
+import { useCart } from '@/context/CartContext';
 
 export default function ProductDetail({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -13,9 +15,9 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [cartItemsCount, setCartItemsCount] = useState(0);
+  const { favorites, updateFavorites } = useFavorites();
+  const { incrementCartCount } = useCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -26,43 +28,16 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
         }
         const data = await response.json();
         setProduct(data);
-
-        // お気に入りの状態を確認（ログイン時のみ）
-        if (session?.user?.email) {
-          try {
-            const favResponse = await fetch('/api/favorites');
-            if (favResponse.ok) {
-              const favorites = await favResponse.json();
-              setIsFavorite(favorites.some(fav => fav.productId === data.id));
-            }
-          } catch (error) {
-            console.error('Failed to fetch favorites:', error);
-            setIsFavorite(false);
-          }
-        }
       } catch (error: any) {
         console.error('Error:', error);
         setError(error.message);
       }
     };
 
-    const fetchCartCount = async () => {
-      try {
-        const response = await fetch('/api/cart');
-        if (response.ok) {
-          const cart = await response.json();
-          setCartItemsCount(cart.length);
-        }
-      } catch (error) {
-        console.error('カート数の取得エラー:', error);
-      }
-    };
-
     if (params.id) {
       fetchProduct();
-      fetchCartCount();
     }
-  }, [params.id, session?.user?.email]);
+  }, [params.id]);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -91,7 +66,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
         throw new Error(error.message || 'カートへの追加に失敗しました');
       }
 
-      setCartItemsCount(prev => prev + quantity);
+      incrementCartCount(quantity);
       alert('カートに追加しました');
     } catch (error: any) {
       console.error('Cart error:', error);
@@ -127,7 +102,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
         throw new Error('カートへの追加に失敗しました');
       }
 
-      setCartItemsCount(prev => prev + quantity);
+      incrementCartCount(quantity);
       router.push('/checkout');
     } catch (error: any) {
       console.error('Error:', error);
@@ -157,8 +132,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
         throw new Error(data.error);
       }
 
-      setIsFavorite(data.isFavorite);
-      alert(data.message);
+      updateFavorites(parseInt(params.id), data.isFavorite);
     } catch (error: any) {
       console.error('Favorite error:', error);
       alert('お気に入りの更新に失敗しました');
@@ -167,7 +141,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-[calc(100vh-4rem-16rem)] flex items-center justify-center">
         <div className="text-red-500 text-xl">{error}</div>
       </div>
     );
@@ -175,7 +149,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-[calc(100vh-4rem-16rem)] flex items-center justify-center">
         <div className="text-xl">読み込み中...</div>
       </div>
     );
@@ -206,6 +180,20 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
               </span>
             </div>
           )}
+          <button 
+            onClick={handleToggleFavorite}
+            className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${
+              favorites.has(parseInt(params.id))
+                ? 'bg-black text-white'
+                : 'bg-white/80 hover:bg-white text-gray-600'
+            }`}
+            aria-label={favorites.has(parseInt(params.id)) ? "お気に入りから削除" : "お気に入りに追加"}
+          >
+            <Heart 
+              className="w-5 h-5" 
+              fill={favorites.has(parseInt(params.id)) ? "currentColor" : "none"}
+            />
+          </button>
         </div>
 
         <div className="space-y-6">
@@ -275,14 +263,6 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                   : 'bg-white text-black border-2 border-black hover:-translate-y-0.5 hover:shadow-lg transition-all'}`}
             >
               {product.stock <= 0 ? 'SOLD OUT' : isLoading ? '処理中...' : 'カートに追加'}
-            </button>
-            <button 
-              onClick={handleToggleFavorite}
-              className={`p-3 rounded-full border-2 border-gray-900 hover:-translate-y-0.5 hover:shadow-md transition-transform ${
-                isFavorite ? 'bg-black' : ''
-              }`}
-            >
-              <Heart className={`w-6 h-6 ${isFavorite ? 'text-white' : 'text-black'}`} fill={isFavorite ? 'white' : 'none'} />
             </button>
           </div>
         </div>

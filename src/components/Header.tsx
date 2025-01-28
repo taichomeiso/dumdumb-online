@@ -12,14 +12,12 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu"
 import { useFavorites } from "@/context/FavoritesContext"
+import { useCart } from "@/context/CartContext"
 
-interface HeaderProps {
-  cartItemsCount?: number;
-}
-
-export function Header({ cartItemsCount = 0 }: HeaderProps) {
+export function Header() {
   const { data: session } = useSession()
   const { favoritesCount } = useFavorites()
+  const { cartItemsCount } = useCart()
   const isAdmin = session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL
 
   return (

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Trash2 } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 
 interface Product {
   id: number;
@@ -22,6 +23,7 @@ interface CartItem {
 export default function Cart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { updateCartCount } = useCart();
 
   useEffect(() => {
     void fetchCartItems();
@@ -35,6 +37,9 @@ export default function Cart() {
       }
       const data = await response.json();
       setCartItems(data);
+      // カートの合計数を更新
+      const totalItems = data.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
+      updateCartCount(totalItems);
     } catch (error) {
       console.error("Error fetching cart:", error);
     } finally {
@@ -56,13 +61,18 @@ export default function Cart() {
 
       if (!response.ok) throw new Error("更新に失敗しました");
 
+      // カートの商品を再取得して表示とカウントを更新
       void fetchCartItems();
     } catch (error) {
       console.error("Error updating quantity:", error);
     }
   };
 
-  const removeItem = async (itemId: string) => {
+  const removeItem = async (itemId: string, itemName: string) => {
+    // 削除確認のアラート
+    const isConfirmed = confirm(`「${itemName}」をカートから削除しますか？`);
+    if (!isConfirmed) return;
+
     try {
       const response = await fetch(`/api/cart/${itemId}`, {
         method: "DELETE",
@@ -70,6 +80,7 @@ export default function Cart() {
 
       if (!response.ok) throw new Error("削除に失敗しました");
 
+      // カートの商品を再取得して表示とカウントを更新
       void fetchCartItems();
     } catch (error) {
       console.error("Error removing item:", error);
@@ -105,7 +116,7 @@ export default function Cart() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem-16rem)]">
+      <div className="min-h-[calc(100vh-4rem-16rem)] flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-black border-t-transparent" />
       </div>
     );
@@ -170,9 +181,9 @@ export default function Cart() {
                         </button>
                       </div>
                       <button
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem(item.id, item.product.name)}
                         className="text-gray-500 hover:text-red-500 transition-colors"
-                        aria-label="商品を削除"
+                        aria-label={`${item.product.name}を削除`}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
