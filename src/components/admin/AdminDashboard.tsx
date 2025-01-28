@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Trash2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { Header } from '@/components/Header';
 
 interface Product {
   id: string;
@@ -213,175 +212,172 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div>
-      <Header />
-      <div className="min-h-screen bg-gray-100 py-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h1 className="text-2xl font-black text-black mb-6">商品登録</h1>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-base font-bold text-black mb-1">
-                  商品名
-                </label>
+    <div className="min-h-screen bg-gray-100 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h1 className="text-2xl font-black text-black mb-6">商品登録</h1>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-base font-bold text-black mb-1">
+                商品名
+              </label>
+              <input
+                type="text"
+                value={newProduct.name}
+                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-base font-bold text-black mb-1">
+                カテゴリー
+              </label>
+              <select
+                value={newProduct.category}
+                onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
+                required
+              >
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-base font-bold text-black mb-1">
+                価格
+              </label>
+              <input
+                type="number"
+                value={newProduct.price}
+                onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
+                required
+                min="0"
+              />
+            </div>
+
+            <div>
+              <label className="block text-base font-bold text-black mb-1">
+                在庫数
+              </label>
+              <input
+                type="number"
+                value={newProduct.stock}
+                onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
+                required
+                min="0"
+              />
+            </div>
+
+            <div>
+              <label className="block text-base font-bold text-black mb-1">
+                説明
+              </label>
+              <textarea
+                value={newProduct.description}
+                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
+                required
+                rows={4}
+              />
+            </div>
+
+            <div>
+              <label className="block text-base font-bold text-black mb-1">
+                商品画像
+              </label>
+              <input
+                type="file"
+                onChange={handleFileSelect}
+                accept="image/*"
+                className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
+                required
+              />
+              {preview && (
+                <div className="mt-2 relative w-32 h-32">
+                  <Image
+                    src={preview}
+                    alt="プレビュー"
+                    fill
+                    className="object-cover rounded-md"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-6">
+              <label className="flex items-center">
                 <input
-                  type="text"
-                  value={newProduct.name}
-                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                  className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
-                  required
+                  type="checkbox"
+                  checked={newProduct.isNew}
+                  onChange={(e) => setNewProduct({ ...newProduct, isNew: e.target.checked })}
+                  className="mr-2 w-4 h-4 border-2 border-gray-900"
                 />
-              </div>
+                <span className="text-base font-bold text-black">新着商品</span>
+              </label>
 
-              <div>
-                <label className="block text-base font-bold text-black mb-1">
-                  カテゴリー
-                </label>
-                <select
-                  value={newProduct.category}
-                  onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-                  className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
-                  required
-                >
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-base font-bold text-black mb-1">
-                  価格
-                </label>
+              <label className="flex items-center">
                 <input
-                  type="number"
-                  value={newProduct.price}
-                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                  className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
-                  required
-                  min="0"
+                  type="checkbox"
+                  checked={newProduct.isFeatured}
+                  onChange={(e) => setNewProduct({ ...newProduct, isFeatured: e.target.checked })}
+                  className="mr-2 w-4 h-4 border-2 border-gray-900"
                 />
-              </div>
+                <span className="text-base font-bold text-black">おすすめ商品</span>
+              </label>
+            </div>
 
-              <div>
-                <label className="block text-base font-bold text-black mb-1">
-                  在庫数
-                </label>
-                <input
-                  type="number"
-                  value={newProduct.stock}
-                  onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                  className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
-                  required
-                  min="0"
-                />
-              </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition-colors disabled:bg-gray-400 font-bold text-lg mt-6"
+            >
+              {isLoading ? '登録中...' : '商品を登録'}
+            </button>
+          </form>
+        </div>
 
-              <div>
-                <label className="block text-base font-bold text-black mb-1">
-                  説明
-                </label>
-                <textarea
-                  value={newProduct.description}
-                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                  className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
-                  required
-                  rows={4}
-                />
-              </div>
-
-              <div>
-                <label className="block text-base font-bold text-black mb-1">
-                  商品画像
-                </label>
-                <input
-                  type="file"
-                  onChange={handleFileSelect}
-                  accept="image/*"
-                  className="w-full px-3 py-2 border-2 border-gray-900 rounded-md text-black font-medium"
-                  required
-                />
-                {preview && (
-                  <div className="mt-2 relative w-32 h-32">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-black text-black mb-6">登録済み商品</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {products.map((product) => (
+              <div key={product.id} className="border-2 border-gray-900 rounded-lg p-4">
+                <div className="relative w-full h-48">
+                  {product.imageUrl && (
                     <Image
-                      src={preview}
-                      alt="プレビュー"
+                      src={product.imageUrl}
+                      alt={product.name}
                       fill
                       className="object-cover rounded-md"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-6">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={newProduct.isNew}
-                    onChange={(e) => setNewProduct({ ...newProduct, isNew: e.target.checked })}
-                    className="mr-2 w-4 h-4 border-2 border-gray-900"
-                  />
-                  <span className="text-base font-bold text-black">新着商品</span>
-                </label>
-
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={newProduct.isFeatured}
-                    onChange={(e) => setNewProduct({ ...newProduct, isFeatured: e.target.checked })}
-                    className="mr-2 w-4 h-4 border-2 border-gray-900"
-                  />
-                  <span className="text-base font-bold text-black">おすすめ商品</span>
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition-colors disabled:bg-gray-400 font-bold text-lg mt-6"
-              >
-                {isLoading ? '登録中...' : '商品を登録'}
-              </button>
-            </form>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-black text-black mb-6">登録済み商品</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {products.map((product) => (
-                <div key={product.id} className="border-2 border-gray-900 rounded-lg p-4">
-                  <div className="relative w-full h-48">
-                    {product.imageUrl && (
-                      <Image
-                        src={product.imageUrl}
-                        alt={product.name}
-                        fill
-                        className="object-cover rounded-md"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      />
-                    )}
-                    <button
-                      onClick={() => handleDelete(product.id)}
-                      className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                      title="商品を削除"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="flex justify-between items-start mt-4 mb-3">
-                    <h3 className="text-lg font-bold text-black">{product.name}</h3>
-                    <span className="bg-black text-white px-3 py-1 rounded-full text-sm font-bold">
-                      {categories.find(c => c.id === product.category)?.label || product.category}
-                    </span>
-                  </div>
-                  <p className="text-black font-bold mb-2">¥{product.price.toLocaleString()}</p>
-                  <p className="text-black font-medium">在庫: {product.stock}点</p>
+                  )}
+                  <button
+                    onClick={() => handleDelete(product.id)}
+                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    title="商品を削除"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
                 </div>
-              ))}
-            </div>
+                <div className="flex justify-between items-start mt-4 mb-3">
+                  <h3 className="text-lg font-bold text-black">{product.name}</h3>
+                  <span className="bg-black text-white px-3 py-1 rounded-full text-sm font-bold">
+                    {categories.find(c => c.id === product.category)?.label || product.category}
+                  </span>
+                </div>
+                <p className="text-black font-bold mb-2">¥{product.price.toLocaleString()}</p>
+                <p className="text-black font-medium">在庫: {product.stock}点</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
